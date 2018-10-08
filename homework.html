@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+	<script type="text/javascript">
+		window.onload = function(){};
+		$(document).ready(function() {
+			var books;
+			var idN = -1;
+			var nameN = 1;
+			var priceN = 1;
+			var authorN = 1;
+			var tempID;
+			function outputTr(){									
+				books.forEach(function(book) {
+					var $tr = $('<tr></tr>');
+					$tr.append('<td>' +book.id+'</td><td>' + book.name + '</td><td>' + book.Price +'</td><td>' +book.Author+'</td><td><a id="edit">edit</a>  <a id="delete">delete</a></td>');
+					$tr.appendTo($('tbody'));
+				})
+			}
+
+			function outputCertainTr(data){									
+				data.forEach(function(book) {
+					var $tr = $('<tr></tr>');
+					$tr.append('<td>' +book.id+'</td><td>' + book.name + '</td><td>' + book.Price +'</td><td>' +book.Author+'</td><td><a id="edit">edit</a>  <a id="delete">delete</a></td>');
+					$tr.appendTo($('tbody'));
+				})
+			}
+
+			$.get('http://localhost:3000/books').
+				then(function(data) {
+					books =data;
+					outputTr();					
+				});
+
+			$(document).on('click','#delete',function() {
+				var node = this.parentNode.parentNode;
+				var indexID = node.firstChild.innerHTML;
+				$.ajax({
+					url:'http://localhost:3000/books/' + indexID,
+					type:'DELETE',
+					success:function(data){
+						books = data;
+						var $tbody = $('tbody');/////why not can't directly empty
+						$tbody.empty();
+						outputTr();
+					}
+				});
+			});
+
+			$(document).on('click','#edit',function() {
+				var node = this.parentNode.parentNode;
+				var indexID = node.firstChild.innerHTML;
+				tempID=indexID;
+				$('#bID').text(indexID);
+			});
+
+			function findTableContent() {
+				var localBooks = [];
+				var table = document.getElementById('table1');
+				for (var i = 1;i < table.rows.length;i ++) {
+					var book = {};
+					book.id = table.rows[i].cells[0].innerHTML;
+					book.name = table.rows[i].cells[1].innerHTML;
+					book.Price = table.rows[i].cells[2].innerHTML;
+					book.Author = table.rows[i].cells[3].innerHTML;
+					localBooks.push(book);
+				}
+				return localBooks;
+			}
+
+			$('#id').on('click',function() {
+				var localBooks = findTableContent();				
+				localBooks.sort(function(a,b) {
+					return (a.id - b.id) * idN;					
+				});
+				if (idN === 1) idN = -1;
+				else idN = 1;
+				var $tbody = $('tbody');/////why not can't directly empty
+				$tbody.empty();
+				outputCertainTr(localBooks);
+					
+			});
+			
+			$('#name').on('click',function() {
+				var localBooks = findTableContent();
+				localBooks.sort(function(a, b) {
+				  var nameA = a.name.toUpperCase(); // ignore upper and lowercase
+				  var nameB = b.name.toUpperCase(); // ignore upper and lowercase
+				  if (nameA < nameB) {
+				    return -1 * nameN;
+				  }
+				  if (nameA > nameB) {
+				    return 1 * nameN;
+				  }
+
+				  // names must be equal
+				  return 0;
+				});
+				if (nameN === 1) nameN = -1;
+				else nameN = 1;
+				var $tbody = $('tbody');/////why not can't directly empty
+				$tbody.empty();
+				outputCertainTr(localBooks);
+					
+			});
+
+			$('#price').on('click',function() {
+				var localBooks = findTableContent();
+				localBooks.sort(function(a,b) {
+					return (a.Price - b.Price) * priceN;					
+				});
+				if (priceN === 1) priceN = -1;
+				else priceN = 1;
+				var $tbody = $('tbody');/////why not can't directly empty
+				$tbody.empty();
+				outputCertainTr(localBooks);
+					
+			});
+
+			$('#author').on('click',function() {
+				var localBooks = findTableContent();
+				localBooks.sort(function(a, b) {
+				  var nameA = a.Author.toUpperCase(); // ignore upper and lowercase
+				  var nameB = b.Author.toUpperCase(); // ignore upper and lowercase
+				  if (nameA < nameB) {
+				    return -1 * authorN;
+				  }
+				  if (nameA > nameB) {
+				    return 1 * authorN;
+				  }
+
+				  // names must be equal
+				  return 0;
+				});
+				if (authorN === 1) authorN = -1;
+				else authorN = 1;
+				var $tbody = $('tbody');/////why not can't directly empty
+				$tbody.empty();
+				outputCertainTr(localBooks);					
+			});
+
+			$('#add').on('click',function() {
+				var book = {
+					id:$('#formID').val(),
+					name:$('#formName').val(),
+					Price:$('#formPrice').val(),
+					Author:$('#formAuthor').val()
+				};
+				if (checkValid(book)){
+					$.post('http://localhost:3000/books',book).then(function(data) {
+						books = data;
+						var $tbody = $('tbody');/////why not can't directly empty
+						$tbody.empty();
+						outputTr();
+					});
+				}
+				
+			});
+			function checkValid(book) {
+				var text = '';
+				if (book.id === ''){
+					text += 'Please input ID!\n';
+				} else if (isNaN(book.id)){
+					text += 'Please input a number in ID!\n';
+				}else{
+					var index = books.findIndex(function(u) {
+						return book.id == u.id;
+					});
+					if (index != -1){
+						text += 'ID already exist! Please change to another number!\n';
+					}
+				}
+				if (book.name === ''){
+					text += 'Please input book name!\n';
+				}
+				
+				if (book.Price === ''){
+					text += 'Please input book price!\n';
+				}else if (isNaN(book.Price)){
+					text += 'The price is illegal!\n';
+				}
+				if (book.Author === ''){
+					text += 'please input Author name!\n';
+				}
+				if (text === '') return true;
+				alert(text);
+				return false;
+
+			}
+			$('#put').on('click',function() {
+			if (checkValidPut() && checkTempId()){
+				$.ajax({
+					url:'http://localhost:3000/books',
+					type:'PUT',
+					data:{
+						id:tempID,
+						name:$('#formName1').val(),
+						Price:$('#formPrice1').val(),
+						Author:$('#formAuthor1').val()
+					},
+					success:function(data){
+						var $tbody = $('tbody');/////why not can't directly empty
+						$tbody.empty();
+						books=data;
+						outputTr();
+						tempID = NaN;
+					}
+				});
+			}
+			});
+			function checkTempId() {
+				if (isNaN(tempID)) {
+					alert("Please choose the book you want to edit first!");
+					return false;
+				}
+				return true;
+			}
+			function checkValidPut() {
+				var name=$('#formName1').val();
+				var	Price=$('#formPrice1').val();
+				var Author=$('#formAuthor1').val();
+				var text = '';
+				if (name === ''){
+					text += 'The book name can not be empty!\n';
+				}
+				
+				if (Price === ''){
+					text += 'Please input book price!\n';
+				}else if (isNaN(Price)){
+					text += 'The price is illegal!\n';
+				}
+				if (Author === ''){
+					text += 'please input Author name!\n';
+				}
+				if (text === '') return true;
+				alert(text);
+				return false;
+			}
+			// $(document).on('change','#mySelect',function() {
+			// 	tempFilterValue = $('#mySelect').val();
+			// });
+
+			$('#filter').on('click',function() {
+				var localBooks;
+				var t = $('#mySelect').val();
+				var opt = $('#filterInput').val();
+				if (checkFilterInput(t,opt)){
+					switch(t) {
+						case "Name":
+						localBooks = filterByName(opt);
+						break;
+						case "Author":
+						localBooks = filterByAuthor(opt);
+						break;
+						case "MinPrice":
+						localBooks = filterByMinPrice(opt);
+						break;
+						case "MaxPrice":
+						localBooks = filterByMaxPrice(opt);
+						break;
+						default:
+						break;
+					}
+					var $tbody = $('tbody');
+					$tbody.empty();
+					outputCertainTr(localBooks);
+				}
+				
+			});
+
+			function checkFilterInput(t,opt) {
+				var text = '';
+				if (t === 'Name' || t === "Author") {
+					if (opt === ''){
+						text += "Please input a filter info!\n";
+					}
+				}else if(t === "MinPrice" || t === "MaxPrice"){
+					if (opt === ''){
+						text += "Please input a filter info!\n";
+					}else if(isNaN(opt)){
+						text += "The input must be a number!\n";
+					}
+				}
+				if (text === '') return true;
+				alert(text);
+				return false;
+			}
+			function filterByName(filterContent) {
+				var localBooks = [];
+				books.forEach(function(book) {
+					if (book.name.toLowerCase().indexOf(filterContent.toLowerCase()) > -1){
+						localBooks.push(book);
+					}
+				});
+				return localBooks;
+			}
+			function filterByAuthor(filterContent) {
+				var localBooks = [];
+				books.forEach(function(book) {
+					if (book.Author.toLowerCase().indexOf(filterContent.toLowerCase()) > -1){
+						var index = books.findIndex(function(u) {
+							return u.Author === book.Author;
+						});
+						localBooks.push(book);
+					}
+				});
+				return localBooks;
+			}
+			function filterByMinPrice(filterContent) {
+				var localBooks = [];
+				books.forEach(function(book) {
+					if (book.Price >= filterContent){
+						localBooks.push(book);
+					}
+				});
+				return localBooks;
+			}
+			function filterByMaxPrice(filterContent) {
+				var localBooks = [];
+				books.forEach(function(book) {
+					if (book.Price <= filterContent) {
+						localBooks.push(book);
+					}
+				});
+				return localBooks;
+			}
+			
+		});
+
+	</script>
+	<style type="text/css">
+		#table {
+			position: relative;
+			margin-top: 5px;
+			margin-left: 20px;
+			margin-right: 10px;
+			width: 90%;
+			border: 1px solid green;
+		}
+		#firstDiv {
+			position: relative;
+			border: 1px solid black;
+			width: 1140px;
+			margin:1px;
+		}
+		#firstDiv1 {
+			overflow: auto;
+			position: relative;
+			float: left;
+			width:50%;
+			height: 200px;
+			border:1px solid black;
+		}
+		#firstDiv2 {
+			position: relative;
+			float: right;
+			width:50%;
+			height: 200px;
+			border:1px solid black;
+		}
+		#secondDiv {
+			margin-top: 200px;
+			position: relative;
+			border: 1px solid black;
+			height: 160px;
+			width: 1140px;
+		}
+		#secondDiv1 {
+			margin-left: 5px;
+			position: relative;
+			border: 0.5px dashed black;
+			float: left;
+			width: 560px;
+		}
+		#secondDiv2 {
+			margin-right: 5px;
+			position: relative;
+			border: 0.5px dashed black;
+			float: right;
+			width:	560px;
+		}
+		#formID {
+			margin-left: 30px;
+
+		}
+		#formName {
+			margin-left: 15px;
+		}
+		#formName1 {
+			margin-left: 1px;
+			margin-top: 10px;
+			width: 110px;
+		}
+		#formPrice {
+			margin-left: 1px;
+			margin-top: 5px;
+		}
+		#formPrice1 {
+			margin-left: 1px;
+			margin-top: 10px;
+			width: 110px;
+		}
+		#formAuthor {
+			margin-top: 5px;
+			margin-left: 1px;
+		}
+		#formAuthor1 {
+			margin-top: 10px;
+			margin-left: 1px;
+			width: 110px;
+		}
+		#fontID {
+			margin-left: 30px;
+		}
+		#fontName {
+			margin-left: 5px;
+		}
+		#fontAuthor {
+			
+			margin-left: 5px;
+		}
+		#
+		#fontPrice1 {
+			margin-left: 5px;
+		}
+		#bID {
+			margin-left: 30px;
+		}
+		#add {
+			width:100px;
+			margin-top: 10px;
+			margin-left: 30px;
+		}
+		#put {
+			width: 100px;
+			margin-top: 10px;
+			margin-left: 30px;
+		}
+
+		#fontDiv2 {
+			margin-left: 90px;
+			margin-top: 50px;
+		}
+		#mySelect {
+			margin-left: 100px;
+			margin-top: 50px;
+			width: 150px;
+		}
+		#filterInput {
+			margin-left: 90px;
+			margin-top: 20px;
+		}
+		#filter {
+			margin-left: 20px;
+			margin-top: 20px;
+			width: 90px;
+		}
+	</style> 
+</head>
+<body>
+	<div class="container">
+		<h1>Books</h1>
+		<div id="firstDiv">
+			<div id = "firstDiv1">
+			<table class="table" id="table1">
+		    <thead>
+		      <tr>
+		        <th><a id="id">ID</a></th>
+		        <th><a id="name">NAME</a></th>
+		        <th><a id="price">PRICE</a></th>
+		        <th><a id="author">AUTHOR</a></th>
+		        <th>OPERATION</th>
+		      </tr>
+		    </thead>
+		    <tbody>
+		    </tbody>
+		  	</table>
+		  </div>
+		  	<div id="firstDiv2">
+		  		<font id = "fontDiv2">FILTER :</font>
+		  		<select id="mySelect">
+		  			<option value="Null">Select
+					  <option value="Name">Name
+					  <option value="Author">Author
+					  <option value="MinPrice">Min Price
+					  <option value="MaxPrice">Max Price
+				</select><br/>
+				 <input type="text" id="filterInput">
+				 <button type="button" id='filter'>Filter</button>
+		  	</div>
+		</div>
+		<div id="secondDiv">
+			<div id="secondDiv1">
+				<h2 align="center">Add Book</h2>
+				<form>
+					<font id="fontID">ID:</font><input type="text" id="formID">
+					<font id="fontName">NAME:</font> <input type="text" id="formName"><br/>
+					<font id='fontID'>PRICE:</font><input type="text" id="formPrice">
+					<font id='fontAuthor'>AUTHOR:</font><input type="text" id="formAuthor"><br/>
+					<button type="button" id='add'>Submit</button>
+				</form>
+			</div>
+			<div id="secondDiv2">
+				<h2 align="center">Edit Book</h2>
+				<form>
+					<font id="fontID">ID:</font><b id="bID"></b><br/>
+					<font id="fontID">NAME:</font> <input type="text" id="formName1">
+					<font id='fontPrice1'>PRICE:</font><input type="text" id="formPrice1">
+					<font id='fontAuthor'>AUTHOR:</font><input type="text" id="formAuthor1"><br/>
+					<button type="button" id='put'>Submit</button>
+				</form>
+			</div>
+		</div>
+		
+	</div>
+	
+</body>
+</html>
